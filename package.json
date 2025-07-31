@@ -1,0 +1,33 @@
+{
+  "name": "surreal-tools",
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "build:declaration": "tsc -p tsconfig.declaration.json",
+    "build:src": "bun run build.ts",
+    "build": "bun build:src && bun build:declaration"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "bin": {
+    "surreal-tools": "./dist/cli.js"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/yargs": "^17.0.33"
+  },
+  "peerDependencies": {
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "chalk": "^5.4.1",
+    "prettier": "^3.6.2",
+    "surrealdb": "^2.0.0-alpha.4",
+    "yargs": "^18.0.0",
+    "zod": "^4.0.13"
+  }
+}

@@ -1,0 +1,5 @@
+build.ts
+tsconfig.*
+.gitignore
+src
+bun.lock
