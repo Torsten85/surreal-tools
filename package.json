@@ -1,7 +1,10 @@
 {
   "name": "surreal-tools",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
+  "author": {
+    "name": "Torsten Blindert"
+  },
   "scripts": {
     "build:declaration": "tsc -p tsconfig.declaration.json",
     "build:src": "bun run build.ts",
@@ -13,6 +16,8 @@
       "types": "./dist/index.d.ts"
     }
   },
+  "repository": "github:Torsten85/surreal-tools",
+  "homepage": "https://github.com/Torsten85/surreal-tools",
   "bin": {
     "surreal-tools": "./dist/cli.js"
   },
