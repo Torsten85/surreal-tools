@@ -1,6 +1,6 @@
 {
   "name": "surreal-tools",
-  "version": "0.0.2",
+  "version": "1.0.0",
   "type": "module",
   "author": {
     "name": "Torsten Blindert"
@@ -17,7 +17,8 @@
     "check-format": "prettier --check .",
     "test": "bun check-types && bun lint && bun check-format && bun test",
     "changeset": "changeset",
-    "version": "changeset version"
+    "version": "changeset version",
+    "release": "bun run build && changeset publish"
   },
   "exports": {
     ".": {
@@ -26,10 +27,12 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "repository": "github:Torsten85/surreal-tools",
+  "repository": {
+    "url": "git+https://github.com/Torsten85/surreal-tools.git"
+  },
   "homepage": "https://github.com/Torsten85/surreal-tools",
   "bin": {
-    "surreal-tools": "./dist/cli.js"
+    "surreal-tools": "dist/cli.js"
   },
   "devDependencies": {
     "@changesets/changelog-github": "^0.5.2",
