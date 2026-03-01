@@ -1,13 +1,24 @@
-import Surreal from "surrealdb";
-import { loadConfig } from "./config";
+import { Surreal, createRemoteEngines } from 'surrealdb'
 
-export default async function createSurreal() {
-  const surreal = new Surreal();
-  const config = await loadConfig();
+import { type Config, loadConfig } from './config'
 
-  await surreal.connect(config.url, {
-    authentication: config.authentication,
-  });
+export async function createSurreal(config?: Config) {
+  const usedConfig = config ?? (await loadConfig())
 
-  return surreal;
+  const nodeEngines = /^(mem|rocksdb|surrealkv):\/\//.test(usedConfig.url)
+    ? (await import('@surrealdb/node')).createNodeEngines()
+    : {}
+
+  const surreal = new Surreal({
+    engines: {
+      ...createRemoteEngines(),
+      ...nodeEngines,
+    },
+  })
+
+  await surreal.connect(usedConfig.url, {
+    authentication: usedConfig.authentication,
+  })
+
+  return surreal
 }

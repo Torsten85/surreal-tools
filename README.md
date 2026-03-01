@@ -11,6 +11,12 @@
 npm install surreal-tools
 ```
 
+> **Note:** If you are using an embedded database protocol (`mem://`, `rocksdb://`, `surrealkv://`), you also need to install `@surrealdb/node`:
+>
+> ```bash
+> npm install @surrealdb/node
+> ```
+
 ## Usage
 
 ### `surql`: Tagged Template Function for Queries
@@ -18,10 +24,11 @@ npm install surreal-tools
 **Basic Setup**
 
 ```typescript
-import Surreal from "surrealdb";
+import { Surreal } from "surrealdb";
 import { createSurql } from "surreal-tools";
 
 const surreal = new Surreal();
+await surreal.connect("ws://localhost:8000");
 const surql = createSurql(surreal);
 ```
 
@@ -35,7 +42,7 @@ const responses = await surql`INFO FOR ROOT`;
 
 ```typescript
 const responses = await surql`INFO FOR ROOT`.$type<
-  [{ namespaces: Record<string, string> }]
+  { namespaces: Record<string, string> }
 >();
 ```
 
@@ -49,6 +56,27 @@ const responses = await surql`USE NS ${namespace}`;
 
 // Or using named variables
 const responses = await surql`USE NS $namespace`.vars({ namespace: "test" });
+```
+
+**Transaction Behavior**
+
+Queries containing multiple statements (separated by `;`) are automatically wrapped in a transaction:
+
+```typescript
+// This is automatically wrapped in BEGIN TRANSACTION ... COMMIT TRANSACTION
+const results = await surql`
+  CREATE user SET name = 'Alice';
+  CREATE user SET name = 'Bob';
+`;
+```
+
+To opt out of automatic transaction wrapping, use `.options({ transaction: false })`:
+
+```typescript
+const results = await surql`
+  CREATE user SET name = 'Alice';
+  CREATE user SET name = 'Bob';
+`.options({ transaction: false });
 ```
 
 ## Database Migrations
@@ -65,8 +93,8 @@ npx surreal-tools migration init
 
 This will:
 
-- Prepare the migration namespace and database (default: _migrations/migrations_)
-- Create a migrations folder (default: _.surreal-migrations_)
+- Prepare the migration namespace and database (default: `migrations`/`migrations`)
+- Create a migrations folder (default: `.surreal-migrations`)
 
 ### Creating a Migration
 
@@ -96,10 +124,21 @@ npx surreal-tools migration apply
 **Programmatically**
 
 ```typescript
+import { Surreal } from "surrealdb";
 import { applyMigrations } from "surreal-tools";
 
-await applyMigrations();
-// Optionally pass a configuration object if not using surreal.config.ts
+const surreal = new Surreal();
+await surreal.connect("ws://localhost:8000");
+
+// Pass a Surreal or Surql instance
+const applied = await applyMigrations(surreal);
+
+// Optionally pass migration options as second argument
+// await applyMigrations(surreal, {
+//   baseDir: '.surreal-migrations',
+//   migrationNamespace: 'migrations',
+//   migrationDatabase: 'migrations',
+// });
 ```
 
 ## License

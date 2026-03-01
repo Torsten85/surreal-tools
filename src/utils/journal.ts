@@ -1,36 +1,38 @@
-import { loadConfig } from "../config";
-import fs from "node:fs/promises";
-import path from "node:path";
-import * as prettier from "prettier";
+import fs from 'node:fs/promises'
+import path from 'node:path'
+
+import * as prettier from 'prettier'
+
+import { loadConfig } from '../config'
 
 type Journal = {
-  migrations: string[];
-};
+  migrations: string[]
+}
 
 export async function saveJournal(journal: Journal) {
-  const config = await loadConfig();
+  const config = await loadConfig()
 
   if (!config.baseDir) {
-    throw new Error("migrations not initialized");
+    throw new Error('migrations not initialized')
   }
 
   await fs.writeFile(
-    path.join(config.baseDir, "meta", "journal.json"),
-    await prettier.format(JSON.stringify(journal), { parser: "json" })
-  );
+    path.join(config.baseDir, 'meta', 'journal.json'),
+    await prettier.format(JSON.stringify(journal), { parser: 'json' }),
+  )
 }
 
 export async function loadJournal() {
-  const config = await loadConfig();
+  const config = await loadConfig()
 
   if (!config.baseDir) {
-    throw new Error("migrations not initialized");
+    throw new Error('migrations not initialized')
   }
 
   return JSON.parse(
     await fs.readFile(
-      path.join(config.baseDir, "meta", "journal.json"),
-      "utf-8"
-    )
-  ) as Journal;
+      path.join(config.baseDir, 'meta', 'journal.json'),
+      'utf-8',
+    ),
+  ) as Journal
 }

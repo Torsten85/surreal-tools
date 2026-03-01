@@ -1,74 +1,102 @@
-import type Surreal from "surrealdb";
+import type { Surreal } from 'surrealdb'
 
-type Api<T = unknown[]> = Promise<T> & {
-  vars(vars: Record<string, any>): Api<T>;
-  $type<U extends unknown[]>(): Api<U>;
-};
+interface Options {
+  transaction?: boolean
+}
 
-export default function createSurql(surreal: Surreal) {
+type Api<T> = Promise<T> & {
+  vars(vars: Record<string, any>): Api<T>
+  options(options: Options): Api<T>
+  $type<U>(): Api<U>
+}
+
+export function createSurql(surreal: Surreal) {
   const internalSurql = (
     strings: TemplateStringsArray,
     ...values: any[]
-  ): Api => {
-    let queryVars: Record<string, any> = {};
-
+  ): Api<unknown> => {
+    let queryVars: Record<string, any> = {}
+    let options: Options = {}
     const query = strings.reduce(
-      (acc, str, i) => acc + str + (values[i] ?? ""),
-      ""
-    );
+      (acc, str, i) => acc + str + (values[i] ?? ''),
+      '',
+    )
 
-    let executed = false;
+    let executed = false
 
-    const { promise, reject, resolve } = Promise.withResolvers<unknown[]>();
+    const { promise, reject, resolve } = Promise.withResolvers<unknown>()
 
     const wrappedPromise = new Proxy(promise, {
       get(target, property: keyof PromiseLike<unknown[]>) {
         if (
-          property === "then" ||
-          property === "catch" ||
-          property === "finally"
+          property === 'then' ||
+          property === 'catch' ||
+          property === 'finally'
         ) {
           if (!executed) {
-            executed = true;
+            executed = true
 
             const queries = query
-              .split(";")
+              .split(';')
               .map((q) => q.trim())
-              .filter(Boolean);
-            let usedQuery = query;
-            if (queries.length > 1) {
-              usedQuery = [
-                "BEGIN TRANSACTION",
+              .filter(Boolean)
+
+            if (queries.length === 0) {
+              resolve(undefined)
+            } else if (queries.length === 1) {
+              surreal
+                .query(query, queryVars)
+                .then((result) => {
+                  resolve(result[0])
+                })
+                .catch(reject)
+            } else if (options.transaction !== false) {
+              const wrappedQuery = [
+                'BEGIN TRANSACTION',
                 ...queries,
-                "COMMIT TRANSACTION;",
-              ].join(";\n");
+                'COMMIT TRANSACTION;',
+              ].join(';\n')
+
+              surreal
+                .query(wrappedQuery, queryVars)
+                .then((result) => result.slice(1, -1))
+                .then(resolve)
+                .catch(reject)
+            } else {
+              surreal.query(query, queryVars).then(resolve).catch(reject)
             }
-            surreal.query(usedQuery, queryVars).then(resolve).catch(reject);
           }
 
-          return target[property].bind(target);
+          return target[property].bind(target)
         }
 
-        return target[property];
+        return target[property]
       },
-    });
+    })
 
-    const api: Api = Object.assign(wrappedPromise, {
+    const api: Api<unknown> = Object.assign(wrappedPromise, {
       vars(vars: Record<string, any>) {
-        queryVars = Object.assign(queryVars, vars);
-        return api;
+        queryVars = Object.assign(queryVars, vars)
+        return api
+      },
+      options(opts: Options) {
+        options = opts
+        return api
       },
       $type<T>() {
-        return api as Api<T>;
+        return api as Api<T>
       },
-    });
+    })
 
-    return api;
-  };
+    return api
+  }
 
   return Object.assign(internalSurql, {
     surreal,
-  });
+    close() {
+      return surreal.close()
+    },
+  })
 }
 
-export type Surql = ReturnType<typeof createSurql>;
+export type Surql = ReturnType<typeof createSurql>
